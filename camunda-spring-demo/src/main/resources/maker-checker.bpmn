@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_RefundProcess" targetNamespace="http://bpmn.io/schema/bpmn">
+    <bpmn:process id="refund-process" name="Initiate Refund Flow" isExecutable="true">
+
+        <!-- Start Event -->
+        <bpmn:startEvent id="StartEvent_Refund" name="Start Refund Request">
+            <bpmn:outgoing>Flow_UserToOperator</bpmn:outgoing>
+        </bpmn:startEvent>
+
+        <!-- User Initiates Refund -->
+        <bpmn:userTask id="Task_UserRequest" name="User Initiates Refund">
+            <bpmn:incoming>Flow_UserToOperator</bpmn:incoming>
+            <bpmn:outgoing>Flow_OperatorToJM</bpmn:outgoing>
+        </bpmn:userTask>
+
+        <!-- Operator forwards request -->
+        <bpmn:userTask id="Task_OperatorForward" name="Operator Forwards Request">
+            <bpmn:incoming>Flow_OperatorToJM</bpmn:incoming>
+            <bpmn:outgoing>Flow_JMToPS</bpmn:outgoing>
+        </bpmn:userTask>
+
+        <!-- Payment Service: Create Refund Entry -->
+        <bpmn:serviceTask id="Task_CreateRefundEntry" name="Create Refund Entry" camunda:class="com.example.workflow.CreateRefundEntryTask">
+            <bpmn:incoming>Flow_JMToPS</bpmn:incoming>
+            <bpmn:outgoing>Flow_CheckApproval</bpmn:outgoing>
+        </bpmn:serviceTask>
+
+        <!-- Workflow Approval Check -->
+        <bpmn:exclusiveGateway id="Gateway_CheckWorkflow" name="Approval Required?">
+            <bpmn:incoming>Flow_CheckApproval</bpmn:incoming>
+            <bpmn:outgoing>Flow_ApprovalNotRequired</bpmn:outgoing>
+            <bpmn:outgoing>Flow_ApprovalRequired</bpmn:outgoing>
+        </bpmn:exclusiveGateway>
+
+        <!-- No Approval Required Path -->
+        <bpmn:serviceTask id="Task_ProcessRefund" name="Process Refund" camunda:class="com.example.workflow.ProcessRefundTask">
+            <bpmn:incoming>Flow_ApprovalNotRequired</bpmn:incoming>
+            <bpmn:outgoing>Flow_RefundStatusToJM</bpmn:outgoing>
+        </bpmn:serviceTask>
+
+        <!-- Approval Required Path -->
+        <bpmn:userTask id="Task_CheckPermissions" name="Check User Permissions">
+            <bpmn:incoming>Flow_ApprovalRequired</bpmn:incoming>
+            <bpmn:outgoing>Flow_PermissionCheck</bpmn:outgoing>
+        </bpmn:userTask>
+
+        <bpmn:exclusiveGateway id="Gateway_PermissionCheck" name="Has Permission?">
+            <bpmn:incoming>Flow_PermissionCheck</bpmn:incoming>
+            <bpmn:outgoing>Flow_PermissionDenied</bpmn:outgoing>
+            <bpmn:outgoing>Flow_PermissionGranted</bpmn:outgoing>
+        </bpmn:exclusiveGateway>
+
+        <!-- Permission Denied -->
+        <bpmn:endEvent id="End_PermissionDenied" name="Permission Denied">
+            <bpmn:incoming>Flow_PermissionDenied</bpmn:incoming>
+        </bpmn:endEvent>
+
+        <!-- Permission Granted: Initiate Approval Workflow -->
+        <bpmn:userTask id="Task_InitiateApproval" name="Initiate Approval Workflow">
+            <bpmn:incoming>Flow_PermissionGranted</bpmn:incoming>
+            <bpmn:outgoing>Flow_TriggerNotification</bpmn:outgoing>
+        </bpmn:userTask>
+
+        <bpmn:serviceTask id="Task_TriggerNotification" name="Trigger Approval Notifications" camunda:class="com.example.workflow.TriggerNotificationTask">
+            <bpmn:incoming>Flow_TriggerNotification</bpmn:incoming>
+            <bpmn:outgoing>Flow_RefundStatusToJM</bpmn:outgoing>
+        </bpmn:serviceTask>
+
+        <!-- Refund Status Updates -->
+        <bpmn:userTask id="Task_RefundStatus" name="Refund Status Update">
+            <bpmn:incoming>Flow_RefundStatusToJM</bpmn:incoming>
+            <bpmn:outgoing>Flow_RefundStatusToOperator</bpmn:outgoing>
+        </bpmn:userTask>
+
+        <bpmn:userTask id="Task_ShowResponse" name="Show Refund Response">
+            <bpmn:incoming>Flow_RefundStatusToOperator</bpmn:incoming>
+            <bpmn:outgoing>Flow_EndRefundProcess</bpmn:outgoing>
+        </bpmn:userTask>
+
+        <!-- End Event -->
+        <bpmn:endEvent id="EndEvent_Refund" name="End Refund Process">
+            <bpmn:incoming>Flow_EndRefundProcess</bpmn:incoming>
+        </bpmn:endEvent>
+
+        <!-- Define sequence flows with conditions -->
+        <bpmn:sequenceFlow id="Flow_UserToOperator" sourceRef="StartEvent_Refund" targetRef="Task_UserRequest"/>
+        <bpmn:sequenceFlow id="Flow_OperatorToJM" sourceRef="Task_UserRequest" targetRef="Task_OperatorForward"/>
+        <bpmn:sequenceFlow id="Flow_JMToPS" sourceRef="Task_OperatorForward" targetRef="Task_CreateRefundEntry"/>
+        <bpmn:sequenceFlow id="Flow_CheckApproval" sourceRef="Task_CreateRefundEntry" targetRef="Gateway_CheckWorkflow"/>
+
+        <bpmn:sequenceFlow id="Flow_ApprovalNotRequired" sourceRef="Gateway_CheckWorkflow" targetRef="Task_ProcessRefund">
+            <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approvalRequired == false}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+
+        <bpmn:sequenceFlow id="Flow_ApprovalRequired" sourceRef="Gateway_CheckWorkflow" targetRef="Task_CheckPermissions">
+            <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approvalRequired == true}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+
+        <bpmn:sequenceFlow id="Flow_PermissionCheck" sourceRef="Task_CheckPermissions" targetRef="Gateway_PermissionCheck"/>
+
+        <bpmn:sequenceFlow id="Flow_PermissionDenied" sourceRef="Gateway_PermissionCheck" targetRef="End_PermissionDenied">
+            <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${hasPermission == false}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+
+        <bpmn:sequenceFlow id="Flow_PermissionGranted" sourceRef="Gateway_PermissionCheck" targetRef="Task_InitiateApproval">
+            <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${hasPermission == true}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+
+        <bpmn:sequenceFlow id="Flow_TriggerNotification" sourceRef="Task_InitiateApproval" targetRef="Task_TriggerNotification"/>
+        <bpmn:sequenceFlow id="Flow_RefundStatusToJM" sourceRef="Task_ProcessRefund" targetRef="Task_RefundStatus"/>
+        <bpmn:sequenceFlow id="Flow_RefundStatusToOperator" sourceRef="Task_RefundStatus" targetRef="Task_ShowResponse"/>
+        <bpmn:sequenceFlow id="Flow_EndRefundProcess" sourceRef="Task_ShowResponse" targetRef="EndEvent_Refund"/>
+    </bpmn:process>
+
+    <!-- BPMN Diagram -->
+    <bpmndi:BPMNDiagram id="BPMNDiagram_Refund">
+        <bpmndi:BPMNPlane id="BPMNPlane_Refund" bpmnElement="refund-process"/>
+    </bpmndi:BPMNDiagram>
+</bpmn:definitions>
