@@ -75,7 +75,15 @@ public class RefundService {
             throw new IllegalArgumentException("Refund request not found");
         }
 
-        // Check permission before allowing status update
+        // Check approvalRequired and hasPermission
+        if (!refundRequest.isApprovalRequired()) {
+            logger.warn("Approval not required for process instance: {}", processInstanceId);
+            refundRequest.setStatus("NOT_REQUIRED");
+            refundRequest.setApprovalStatus("NOT_REQUIRED");
+            refundRequest.setOperatorComments("Operation not allowed: Approval is not required");
+            runtimeService.setVariable(processInstanceId, "refundRequest", refundRequest);
+            return refundRequest;
+        }
         if (!refundRequest.isHasPermission()) {
             logger.warn("User {} lacks permission to update refund status for process instance: {}", refundRequest.getUserId(), processInstanceId);
             refundRequest.setStatus("DENIED");
@@ -83,7 +91,7 @@ public class RefundService {
             refundRequest.setOperatorComments("Permission denied: User lacks authorization to update refund status");
             runtimeService.setVariable(processInstanceId, "refundRequest", refundRequest);
             runtimeService.setVariable(processInstanceId, "isDenied", true);
-            return refundRequest; // Early return, no further processing
+            return refundRequest;
         }
 
         Task task = taskService.createTaskQuery()
@@ -124,7 +132,6 @@ public class RefundService {
                 runtimeService.setVariable(processInstanceId, "refundRequest", refundRequest);
             }
         }
-
         logger.info("Refund status updated to {}: {}", status, refundRequest);
         return refundRequest;
     }
@@ -141,7 +148,16 @@ public class RefundService {
             throw new IllegalArgumentException("Refund request not found");
         }
 
-        // Check permission before allowing completion
+        // Check approvalRequired and hasPermission
+        if (!refundRequest.isApprovalRequired()) {
+            logger.warn("Approval not required for process instance: {}", processInstanceId);
+            refundRequest.setStatus("NOT_REQUIRED");
+            refundRequest.setApprovalStatus("NOT_REQUIRED");
+            refundRequest.setOperatorComments("Operation not allowed: Approval is not required");
+            refundRequest.setProcessInstanceId(processInstanceId);
+            runtimeService.setVariable(processInstanceId, "refundRequest", refundRequest);
+            return refundRequest;
+        }
         if (!refundRequest.isHasPermission()) {
             logger.warn("User {} lacks permission to complete refund for process instance: {}", refundRequest.getUserId(), processInstanceId);
             refundRequest.setStatus("DENIED");
@@ -150,7 +166,7 @@ public class RefundService {
             refundRequest.setProcessInstanceId(processInstanceId);
             runtimeService.setVariable(processInstanceId, "refundRequest", refundRequest);
             runtimeService.setVariable(processInstanceId, "isDenied", true);
-            return refundRequest; // Early return, no further processing
+            return refundRequest;
         }
 
         if (processInstance == null || processInstance.isEnded()) {
@@ -159,12 +175,11 @@ public class RefundService {
             return refundRequest;
         }
 
-        // Only allow completion if status is APPROVED
         if (!"APPROVED".equals(refundRequest.getStatus())) {
             logger.warn("Cannot complete refund for process instance {}: Status is not APPROVED", processInstanceId);
             refundRequest.setOperatorComments("Refund cannot be completed: Current status is " + refundRequest.getStatus());
             runtimeService.setVariable(processInstanceId, "refundRequest", refundRequest);
-            return refundRequest; // Early return
+            return refundRequest;
         }
 
         refundRequest.setStatus("COMPLETED");
