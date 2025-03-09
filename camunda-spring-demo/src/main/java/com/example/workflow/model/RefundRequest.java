@@ -1,7 +1,8 @@
-package com.example.workflow;
+package com.example.workflow.model;
 
-public class RefundRequest {
+import java.io.Serializable;
 
+public class RefundRequest implements Serializable {
     private String userId;
     private String refundReason;
     private double refundAmount;
@@ -10,12 +11,19 @@ public class RefundRequest {
     private boolean approvalRequired;
     private boolean hasPermission;
     private String approvalStatus;
+    private String processInstanceId;
 
-    // Default constructor
     public RefundRequest() {
     }
 
-    // Getters and Setters
+    public RefundRequest(String userId, String refundReason, double refundAmount) {
+        this.userId = userId;
+        this.refundReason = refundReason;
+        this.refundAmount = refundAmount;
+        this.status = "CREATED";
+        this.approvalStatus = "CREATED";
+    }
+
     public String getUserId() {
         return userId;
     }
@@ -80,7 +88,14 @@ public class RefundRequest {
         this.approvalStatus = approvalStatus;
     }
 
-    // toString method for debugging
+    public String getProcessInstanceId() {
+        return processInstanceId;
+    }
+
+    public void setProcessInstanceId(String processInstanceId) {
+        this.processInstanceId = processInstanceId;
+    }
+
     @Override
     public String toString() {
         return "RefundRequest{" +
@@ -92,6 +107,7 @@ public class RefundRequest {
                 ", approvalRequired=" + approvalRequired +
                 ", hasPermission=" + hasPermission +
                 ", approvalStatus='" + approvalStatus + '\'' +
+                ", processInstanceId='" + processInstanceId + '\'' +
                 '}';
     }
 }
