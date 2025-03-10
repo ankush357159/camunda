@@ -1,6 +1,5 @@
 # Camunda & Spring Boot Demo
-A simple demo project that makes use of Spring Boot and Camunda. Project's aim is to show the usage of Spring Boot controller within a bpmn.
-
-Demo bpmn used by the project (Drawn with Camunda Modeler):
+This Proof of Concept (PoC) demonstrates a refund processing workflow using Camunda BPM in a Spring Boot application. It handles refund initiation, approval, and completion while enforcing business rules such as permission checks and approval requirements. The process ensures seamless execution and tracking of refund requests.
 ## Demo BPMN
-![Demo BPMN](https://i.ibb.co/WFDKxF1/image.png "Demo BPMN")
+
+<img alt="Maker-Checker-POC" height="700" src="https://res.cloudinary.com/dix08zbvw/image/upload/v1741563387/maker-check-workflow_dhshua.png" width="1200"/>
