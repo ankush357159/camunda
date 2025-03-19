@@ -28,6 +28,8 @@ public class RefundService {
     public RefundRequest initiateRefund(RefundRequest refundRequest) {
         logger.info("Initiating refund process for user: {}", refundRequest.getUserId());
 
+        // To check this capability in workflow
+        // CREATED
         if (refundRequest.getStatus() == null) {
             refundRequest.setStatus("CREATED");
             refundRequest.setApprovalStatus("CREATED");
@@ -76,6 +78,10 @@ public class RefundService {
         }
 
         // Check approvalRequired and hasPermission
+        // refundRequest status to come from workflow
+        // transition id function should be used in workflow.
+        // this
+//        processInstance.
         if (!refundRequest.isApprovalRequired()) {
             logger.warn("Approval not required for process instance: {}", processInstanceId);
             refundRequest.setStatus("NOT_REQUIRED");

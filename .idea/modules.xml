@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/camunda-spring-boot-demo.iml" filepath="$PROJECT_DIR$/.idea/camunda-spring-boot-demo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/camunda-spring-demo/camunda-spring-demo.iml" filepath="$PROJECT_DIR$/camunda-spring-demo/camunda-spring-demo.iml" />
     </modules>
   </component>
 </project>

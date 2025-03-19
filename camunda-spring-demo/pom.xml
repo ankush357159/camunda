@@ -40,6 +40,12 @@
       <artifactId>camunda-bpm-spring-boot-starter-webapp</artifactId>
       <version>7.15.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>4.9.3</version>
+    </dependency>
+
 
     <dependency>
       <groupId>org.camunda.bpm</groupId>
